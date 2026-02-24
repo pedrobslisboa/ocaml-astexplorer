@@ -77,32 +77,23 @@ export function create(data) {
  * Update an existing snippet.
  */
 export function update(revision, data) {
-  // Fetch latest version of snippet
-  return fetchSnippet(revision.getSnippetID())
-    .then(latestRevision => {
-      if (latestRevision.getTransformerID() && !data.toolID) {
-        // Revision was updated to *remove* the transformer, hence we have
-        // to signal the server to delete the transform.js file
-        data.transform = null;
-      }
-      return api(
-        `/gist/${revision.getSnippetID()}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        },
-      )
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error('Unable to update snippet.');
-      })
-      .then(data => new Revision(data));
-    });
+  return api(
+    `/gist/${revision.getSnippetID()}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    },
+  )
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error('Unable to update snippet.');
+  })
+  .then(data => new Revision(data));
 }
 
 /**
@@ -147,15 +138,6 @@ class Revision {
   }
   getRevisionID() {
     return this._gist.history[0].version;
-  }
-
-  getTransformerID() {
-    return this._config.toolID;
-  }
-
-  getTransformCode() {
-    const transformFile = this._gist.files['transform.js'];
-    return transformFile ? transformFile.content : '';
   }
 
   getParserID() {
@@ -210,12 +192,9 @@ class Revision {
 }
 
 function getSource(config, gist) {
-  switch (config.v) {
-    case 1:
-      return gist.files['code.js'].content;
-    case 2: {
-      const ext = getParserByID(config.parserID).category.fileExtension;
-      return gist.files[`source.${ext}`].content;
-    }
+  if (config.v === 2) {
+    const ext = getParserByID(config.parserID).category.fileExtension;
+    return gist.files[`source.${ext}`].content;
   }
+  throw new Error(`Unsupported snippet version: ${config.v}`);
 }

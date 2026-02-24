@@ -1,26 +1,24 @@
 import * as LocalStorage from './components/LocalStorage';
-import ASTOutputContainer from './containers/ASTOutputContainer';
-import CodeEditorContainer from './containers/CodeEditorContainer';
-import ErrorMessageContainer from './containers/ErrorMessageContainer';
+import ASTOutput from './components/ASTOutput';
+import Editor from './components/Editor';
+import ErrorMessage from './components/ErrorMessage';
 import GistBanner from './components/GistBanner';
-import LoadingIndicatorContainer from './containers/LoadingIndicatorContainer';
-import PasteDropTargetContainer from './containers/PasteDropTargetContainer';
-import PropTypes from 'prop-types';
+import LoadingIndicator from './components/LoadingIndicator';
+import PasteDropTarget from './components/PasteDropTarget';
 import {publish} from './utils/pubsub.js';
 import * as React from 'react';
-import SettingsDialogContainer from './containers/SettingsDialogContainer';
-import ShareDialogContainer from './containers/ShareDialogContainer';
+import SettingsDialog from './components/dialogs/SettingsDialog';
+import ShareDialog from './components/dialogs/ShareDialog';
 import SplitPane from './components/SplitPane';
-import ToolbarContainer from './containers/ToolbarContainer';
+import Toolbar from './components/Toolbar';
 import debounce from './utils/debounce';
-import {Provider, connect} from 'react-redux';
+import {Provider, useSelector} from 'react-redux';
 import {astexplorer, persist, revive} from './store/reducers';
 import {createStore, applyMiddleware, compose} from 'redux';
 import {getRevision} from './store/selectors';
 import {loadSnippet} from './store/actions';
 import {render} from 'react-dom';
 import * as gist from './storage/gist';
-import * as parse from './storage/parse';
 import StorageHandler from './storage';
 import '../css/style.css';
 import parserMiddleware from './store/parserMiddleware';
@@ -31,15 +29,16 @@ function resize() {
   publish('PANEL_RESIZE');
 }
 
-function App({hasError}) {
+function App() {
+  const hasError = useSelector(state => !!state.error);
   return (
     <>
-      <ErrorMessageContainer />
-      <PasteDropTargetContainer id="main" className={cx({hasError})}>
-        <LoadingIndicatorContainer />
-        <SettingsDialogContainer />
-        <ShareDialogContainer />
-        <ToolbarContainer />
+      <ErrorMessage />
+      <PasteDropTarget id="main" className={cx({hasError})}>
+        <LoadingIndicator />
+        <SettingsDialog />
+        <ShareDialog />
+        <Toolbar />
         <GistBanner />
         <SplitPane
           className="splitpane-content"
@@ -48,27 +47,17 @@ function App({hasError}) {
           <SplitPane
             className="splitpane"
             onResize={resize}>
-            <CodeEditorContainer />
-            <ASTOutputContainer />
+            <Editor />
+            <ASTOutput />
           </SplitPane>
         </SplitPane>
-      </PasteDropTargetContainer>
+      </PasteDropTarget>
     </>
   );
 }
 
-App.propTypes = {
-  hasError: PropTypes.bool,
-};
-
-const AppContainer = connect(
-  state => ({
-    hasError: !!state.error,
-  }),
-)(App);
-
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-const storageAdapter = new StorageHandler([gist, parse]);
+const storageAdapter = new StorageHandler([gist]);
 const store = createStore(
   astexplorer,
   revive(LocalStorage.readState()),
@@ -87,7 +76,7 @@ store.dispatch({type: 'INIT'});
 
 render(
   <Provider store={store}>
-    <AppContainer />
+    <App />
   </Provider>,
   document.getElementById('container'),
 );
@@ -99,5 +88,3 @@ global.onhashchange = () => {
 if (location.hash.length > 1) {
   store.dispatch(loadSnippet());
 }
-
-

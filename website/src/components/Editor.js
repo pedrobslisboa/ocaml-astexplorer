@@ -2,219 +2,187 @@ import CodeMirror from 'codemirror';
 import 'codemirror/keymap/vim';
 import 'codemirror/keymap/emacs';
 import 'codemirror/keymap/sublime';
-import PropTypes from 'prop-types';
+import React, {useRef, useEffect} from 'react';
+import {useSelector, useDispatch} from 'react-redux';
 import {subscribe, clear} from '../utils/pubsub.js';
-import React from 'react';
+import {setCode, setCursor} from '../store/actions';
+import {getCode, getParser, getParseResult, getKeyMap} from '../store/selectors';
 
-export default class Editor extends React.Component {
+export default function Editor() {
+  const dispatch = useDispatch();
+  const value = useSelector(getCode);
+  const parser = useSelector(getParser);
+  const parseResult = useSelector(getParseResult);
+  const keyMap = useSelector(getKeyMap);
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: props.value,
-    };
+  const mode = parser.category.editorMode || parser.category.id;
+  const error = parseResult && parseResult.error;
+
+  const containerRef = useRef(null);
+  const cmRef = useRef(null);
+  // Track previous props for comparison in effects
+  const prevValueRef = useRef(value);
+  const prevModeRef = useRef(mode);
+  const prevKeyMapRef = useRef(keyMap);
+  const prevErrorRef = useRef(error);
+  const updateTimerRef = useRef(null);
+  const markerRangeRef = useRef(null);
+  const markRef = useRef(null);
+  const subscriptionsRef = useRef([]);
+
+  function getErrorLine(err) {
+    return err.loc ? err.loc.line : (err.lineNumber || err.line);
   }
 
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    if (nextProps.value !== this.state.value) {
-      this.setState(
-        {value: nextProps.value},
-        () => this.codeMirror.setValue(nextProps.value),
-      );
+  function setError(cm, newError, oldError) {
+    if (!cm) return;
+    if (oldError) {
+      const lineNumber = getErrorLine(oldError);
+      if (lineNumber) cm.removeLineClass(lineNumber - 1, 'text', 'errorMarker');
     }
-    if (nextProps.mode !== this.props.mode) {
-      this.codeMirror.setOption('mode', nextProps.mode);
-    }
-
-    if (nextProps.keyMap !== this.props.keyMap) {
-      this.codeMirror.setOption('keyMap', nextProps.keyMap);
-    }
-
-    this._setError(nextProps.error);
-  }
-
-
-  shouldComponentUpdate() {
-    return false;
-  }
-
-  getValue() {
-    return this.codeMirror && this.codeMirror.getValue();
-  }
-
-  _getErrorLine(error) {
-    return error.loc ? error.loc.line : (error.lineNumber || error.line);
-  }
-
-  _setError(error) {
-    if (this.codeMirror) {
-      let oldError = this.props.error;
-      if (oldError) {
-        let lineNumber = this._getErrorLine(oldError);
-        if (lineNumber) {
-          this.codeMirror.removeLineClass(lineNumber-1, 'text', 'errorMarker');
-        }
-      }
-
-      if (error) {
-        let lineNumber = this._getErrorLine(error);
-        if (lineNumber) {
-          this.codeMirror.addLineClass(lineNumber-1, 'text', 'errorMarker');
-        }
-      }
+    if (newError) {
+      const lineNumber = getErrorLine(newError);
+      if (lineNumber) cm.addLineClass(lineNumber - 1, 'text', 'errorMarker');
     }
   }
 
-  _posFromIndex(doc, index) {
-    return (this.props.posFromIndex ? this.props : doc).posFromIndex(index);
+  function posFromIndex(doc, index) {
+    return doc.posFromIndex(index);
   }
 
-  componentDidMount() {
-    this._CMHandlers = [];
-    this._subscriptions = [];
-    this.codeMirror = CodeMirror( // eslint-disable-line new-cap
-      this.container,
-      {
-        keyMap: this.props.keyMap,
-        value: this.state.value,
-        mode: this.props.mode,
-        lineNumbers: this.props.lineNumbers,
-        readOnly: this.props.readOnly,
-      },
+  // Mount / unmount CodeMirror instance
+  useEffect(() => {
+    const cm = CodeMirror(containerRef.current, { // eslint-disable-line new-cap
+      keyMap,
+      value,
+      mode,
+      lineNumbers: true,
+      readOnly: false,
+    });
+    cmRef.current = cm;
+
+    const cmHandlers = [];
+
+    function bindCM(event, handler) {
+      cmHandlers.push(event, handler);
+      cm.on(event, handler);
+    }
+
+    bindCM('changes', () => {
+      clearTimeout(updateTimerRef.current);
+      updateTimerRef.current = setTimeout(() => {
+        const doc = cm.getDoc();
+        dispatch(setCode({
+          code: doc.getValue(),
+          cursor: doc.indexFromPos(doc.getCursor()),
+        }));
+      }, 200);
+    });
+
+    bindCM('cursorActivity', () => {
+      clearTimeout(updateTimerRef.current);
+      updateTimerRef.current = setTimeout(() => {
+        dispatch(setCursor(cm.getDoc().indexFromPos(cm.getCursor())));
+      }, 100);
+    });
+
+    subscriptionsRef.current.push(
+      subscribe('PANEL_RESIZE', () => {
+        if (cmRef.current) cmRef.current.refresh();
+      }),
     );
 
-    this._bindCMHandler('changes', () => {
-      clearTimeout(this._updateTimer);
-      this._updateTimer = setTimeout(this._onContentChange.bind(this), 200);
-    });
-    this._bindCMHandler('cursorActivity', () => {
-      clearTimeout(this._updateTimer);
-      this._updateTimer = setTimeout(this._onActivity.bind(this, true), 100);
-    });
-
-    this._subscriptions.push(
-      subscribe('PANEL_RESIZE', () => {
-        if (this.codeMirror) {
-          this.codeMirror.refresh();
+    // Highlight support
+    markerRangeRef.current = null;
+    markRef.current = null;
+    subscriptionsRef.current.push(
+      subscribe('HIGHLIGHT', ({range}) => {
+        if (!range) return;
+        const doc = cm.getDoc();
+        markerRangeRef.current = range;
+        if (markRef.current) markRef.current.clear();
+        const [start, end] = range.map(index => posFromIndex(doc, index));
+        if (!start || !end) {
+          markerRangeRef.current = markRef.current = null;
+          return;
+        }
+        markRef.current = cm.markText(start, end, {className: 'marked'});
+      }),
+      subscribe('CLEAR_HIGHLIGHT', ({range} = {}) => {
+        if (!range ||
+          markerRangeRef.current &&
+          range[0] === markerRangeRef.current[0] &&
+          range[1] === markerRangeRef.current[1]
+        ) {
+          markerRangeRef.current = null;
+          if (markRef.current) {
+            markRef.current.clear();
+            markRef.current = null;
+          }
         }
       }),
     );
 
-    if (this.props.highlight) {
-      this._markerRange = null;
-      this._mark = null;
-      this._subscriptions.push(
-        subscribe('HIGHLIGHT', ({range}) => {
-          if (!range) {
-            return;
-          }
-          let doc = this.codeMirror.getDoc();
-          this._markerRange = range;
-          // We only want one mark at a time.
-          if (this._mark) {
-            this._mark.clear();
-          }
-          let [start, end] = range.map(index => this._posFromIndex(doc, index));
-          if (!start || !end) {
-            this._markerRange = this._mark = null;
-            return;
-          }
-          this._mark = this.codeMirror.markText(
-            start,
-            end,
-            {className: 'marked'},
-          );
-        }),
+    if (error) setError(cm, error, null);
 
-        subscribe('CLEAR_HIGHLIGHT', ({range}={}) => {
-          if (!range ||
-            this._markerRange &&
-            range[0] === this._markerRange[0] &&
-            range[1] === this._markerRange[1]
-          ) {
-            this._markerRange = null;
-            if (this._mark) {
-              this._mark.clear();
-              this._mark = null;
-            }
-          }
-        }),
-      );
-    }
-
-    if (this.props.error) {
-      this._setError(this.props.error);
-    }
-  }
-
-  componentWillUnmount() {
-    clearTimeout(this._updateTimer);
-    this._unbindHandlers();
-    this._markerRange = null;
-    this._mark = null;
-    let container = this.container;
-    container.removeChild(container.children[0]);
-    this.codeMirror = null;
-  }
-
-  _bindCMHandler(event, handler) {
-    this._CMHandlers.push(event, handler);
-    this.codeMirror.on(event, handler);
-  }
-
-  _unbindHandlers() {
-    const cmHandlers = this._CMHandlers;
-    for (let i = 0; i < cmHandlers.length; i += 2) {
-      this.codeMirror.off(cmHandlers[i], cmHandlers[i+1]);
-    }
-    clear(this._subscriptions);
-  }
-
-  _onContentChange() {
-    const doc = this.codeMirror.getDoc();
-    const args = {
-      value: doc.getValue(),
-      cursor: doc.indexFromPos(doc.getCursor()),
+    return () => {
+      clearTimeout(updateTimerRef.current);
+      for (let i = 0; i < cmHandlers.length; i += 2) {
+        cm.off(cmHandlers[i], cmHandlers[i + 1]);
+      }
+      clear(subscriptionsRef.current);
+      subscriptionsRef.current = [];
+      markerRangeRef.current = null;
+      markRef.current = null;
+      const container = containerRef.current;
+      if (container && container.children[0]) {
+        container.removeChild(container.children[0]);
+      }
+      cmRef.current = null;
     };
-    this.setState(
-      {value: args.value},
-      () => this.props.onContentChange(args),
-    );
-  }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  _onActivity() {
-    this.props.onActivity(
-      this.codeMirror.getDoc().indexFromPos(this.codeMirror.getCursor()),
-    );
-  }
+  // Sync value changes from store → CodeMirror
+  useEffect(() => {
+    const cm = cmRef.current;
+    if (!cm) return;
+    if (value !== prevValueRef.current) {
+      prevValueRef.current = value;
+      if (cm.getValue() !== value) {
+        cm.setValue(value);
+      }
+    }
+  }, [value]);
 
-  render() {
-    return (
-      <div className="editor" ref={c => this.container = c}/>
-    );
-  }
+  // Sync mode changes
+  useEffect(() => {
+    const cm = cmRef.current;
+    if (!cm) return;
+    if (mode !== prevModeRef.current) {
+      prevModeRef.current = mode;
+      cm.setOption('mode', mode);
+    }
+  }, [mode]);
+
+  // Sync keyMap changes
+  useEffect(() => {
+    const cm = cmRef.current;
+    if (!cm) return;
+    if (keyMap !== prevKeyMapRef.current) {
+      prevKeyMapRef.current = keyMap;
+      cm.setOption('keyMap', keyMap);
+    }
+  }, [keyMap]);
+
+  // Sync error highlighting changes
+  useEffect(() => {
+    const cm = cmRef.current;
+    if (!cm) return;
+    if (error !== prevErrorRef.current) {
+      setError(cm, error, prevErrorRef.current);
+      prevErrorRef.current = error;
+    }
+  }, [error]);
+
+  return <div className="editor" ref={containerRef} />;
 }
-
-Editor.propTypes = {
-  value: PropTypes.string,
-  highlight: PropTypes.bool,
-  lineNumbers: PropTypes.bool,
-  readOnly: PropTypes.bool,
-  onContentChange: PropTypes.func,
-  onActivity: PropTypes.func,
-  posFromIndex: PropTypes.func,
-  error: PropTypes.object,
-  mode: PropTypes.string,
-  keyMap: PropTypes.string,
-};
-
-Editor.defaultProps = {
-  value: '',
-  highlight: true,
-  lineNumbers: true,
-  readOnly: false,
-  mode: 'javascript',
-  keyMap: 'default',
-  onContentChange: () => {},
-  onActivity: () => {},
-};

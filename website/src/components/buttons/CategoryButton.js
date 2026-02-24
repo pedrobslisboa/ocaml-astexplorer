@@ -20,48 +20,40 @@ const categoryIcon = {
   yaml: 'fa-yc',
 };
 
-export default class CategoryButton extends React.Component {
-  constructor(props) {
-    super(props);
-    this._onClick = this._onClick.bind(this);
+export default function CategoryButton({category, onCategoryChange}) {
+  function onClick({currentTarget}) {
+    onCategoryChange(getCategoryByID(currentTarget.getAttribute('data-id')));
   }
 
-  _onClick({currentTarget}) {
-    let categoryID = currentTarget.getAttribute('data-id');
-    this.props.onCategoryChange(getCategoryByID(categoryID));
-  }
-
-  render() {
-    return (
-      <div className="button menuButton categoryButton">
-        <span>
-          <i
-            className={cx(categoryIcon[this.props.category.id] || 'fa-file-o', {
-              fa: true,
-              'fa-lg': true,
-              'fa-fw': true,
-            })}
-          />
-          &nbsp;{this.props.category.displayName}
-        </span>
-        <ul>
-          {categories.map(category => (
-            <li key={category.id} onClick={this._onClick} data-id={category.id}>
-              <button type="button">
-                <i
-                  className={cx(categoryIcon[category.id] || 'fa-file-o', {
-                    fa: true,
-                    'fa-fw': true,
-                  })}
-                />
-                &nbsp;{category.displayName}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
+  return (
+    <div className="button menuButton categoryButton">
+      <span>
+        <i
+          className={cx(categoryIcon[category.id] || 'fa-file-o', {
+            fa: true,
+            'fa-lg': true,
+            'fa-fw': true,
+          })}
+        />
+        &nbsp;{category.displayName}
+      </span>
+      <ul>
+        {categories.map(cat => (
+          <li key={cat.id} onClick={onClick} data-id={cat.id}>
+            <button type="button">
+              <i
+                className={cx(categoryIcon[cat.id] || 'fa-file-o', {
+                  fa: true,
+                  'fa-fw': true,
+                })}
+              />
+              &nbsp;{cat.displayName}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 CategoryButton.propTypes = {

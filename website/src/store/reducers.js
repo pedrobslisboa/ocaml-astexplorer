@@ -7,7 +7,6 @@ const initialState = {
 
   // UI related state
   showSettingsDialog: false,
-  showSettingsDrawer: false,
   showShareDialog: false,
   loadingSnippet: false,
   forking: false,
@@ -29,7 +28,6 @@ const initialState = {
   workbench: {
     parser: defaultParser.id,
     parserSettings: null,
-    parseError: null,
     code: defaultParser.category.codeExample,
     keyMap: 'default',
     initialCode: defaultParser.category.codeExample,
@@ -66,7 +64,6 @@ export function astexplorer(state=initialState, action) {
   return {
     // UI related state
     showSettingsDialog: showSettingsDialog(state.showSettingsDialog, action),
-    showSettingsDrawer: showSettingsDrawer(state.showSettingsDrawer, action),
     showShareDialog: showShareDialog(state.showShareDialog, action),
     loadingSnippet: loadSnippet(state.loadingSnippet, action),
     saving: saving(state.saving, action),
@@ -186,17 +183,6 @@ function showSettingsDialog(state=initialState.showSettingsDialog, action) {
     case actions.OPEN_SETTINGS_DIALOG:
       return true;
     case actions.CLOSE_SETTINGS_DIALOG:
-      return false;
-    default:
-      return state;
-  }
-}
-
-function showSettingsDrawer(state=initialState.showSettingsDrawer, action) {
-  switch(action.type) {
-    case actions.EXPAND_SETTINGS_DRAWER:
-      return true;
-    case actions.COLLAPSE_SETTINGS_DRAWER:
       return false;
     default:
       return state;

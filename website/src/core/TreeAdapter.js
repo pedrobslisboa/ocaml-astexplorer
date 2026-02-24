@@ -138,52 +138,6 @@ const TreeAdapterConfigs = {
     nodeToName: () => { throw new Error('nodeToName must be passed');},
     walkNode: () => { throw new Error('walkNode must be passed');},
   },
-
-  estree: {
-    filters: [
-      functionFilter(),
-      emptyKeysFilter(),
-      locationInformationFilter(new Set(['range', 'loc', 'start', 'end'])),
-      typeKeysFilter(),
-    ],
-    openByDefaultNodes: new Set(['Program']),
-    openByDefaultKeys: new Set([
-      'body',
-      'elements', // array literals
-      'declarations', // variable declaration
-      'expression', // expression statements
-    ]),
-    openByDefault(node, key) {
-      return node && this.openByDefaultNodes.has(node.type) ||
-        this.openByDefaultKeys.has(key);
-    },
-    nodeToRange(node) {
-      if (!(node && typeof node === 'object')) {
-        return null;
-      }
-      if (node.range) {
-        return node.range;
-      }
-      if (typeof node.start === 'number' && typeof node.end === 'number') {
-        return [node.start, node.end];
-      }
-      return null;
-    },
-    nodeToName(node) {
-      return node.type;
-    },
-    *walkNode(node) {
-      if (node && typeof node === 'object') {
-        for (let prop in node) {
-          yield {
-            value: node[prop],
-            key: prop,
-            computed: false,
-          }
-        }
-      }
-    },
-  },
 };
 
 function isValidPosition(position) {

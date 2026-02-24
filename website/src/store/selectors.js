@@ -11,10 +11,6 @@ function createSelector(deps, f) {
 
 // UI related
 
-export function getFormattingState(state) {
-  return state.enableFormatting;
-}
-
 export function getCursor(state) {
   return state.cursor;
 }
@@ -29,10 +25,6 @@ export function isLoadingSnippet(state) {
 
 export function showSettingsDialog(state) {
   return state.showSettingsDialog;
-}
-
-export function showSettingsDrawer(state) {
-  return state.showSettingsDrawer;
 }
 
 export function showShareDialog(state) {

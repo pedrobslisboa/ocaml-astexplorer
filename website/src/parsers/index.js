@@ -1,65 +1,37 @@
-const localRequire = require.context('./', true, /^\.\/(?!utils|transpilers)[^/]+\/(transformers\/([^/]+)\/)?(codeExample\.txt|[^/]+?\.js)$/);
+import * as reasonCategory from './reason/index.js';
+import refmt from './reason/refmt.js';
+import reasonCode from './reason/codeExample.txt';
 
-function interopRequire(module) {
-  return module.__esModule ? module.default : module;
-}
+import * as ocamlCategory from './ocaml/index.js';
+import refmtMl from './ocaml/refmt-ml.js';
+import ocamlCode from './ocaml/codeExample.txt';
 
-const files =
-  localRequire.keys()
-  .map(name => name.split('/').slice(1));
+// Wire up Reason category
+reasonCategory.codeExample = reasonCode;
+reasonCategory.parsers = [refmt];
+reasonCategory.transformers = [];
+refmt.category = reasonCategory;
 
-const categoryByID = {};
-const parserByID = {};
-const transformerByID = {};
+// Wire up OCaml category
+ocamlCategory.codeExample = ocamlCode;
+ocamlCategory.parsers = [refmtMl];
+ocamlCategory.transformers = [];
+refmtMl.category = ocamlCategory;
 
-const restrictedParserNames = new Set([
-  'index.js',
-  'codeExample.txt',
-  'transformers',
-  'utils',
-]);
+const categoryByID = {
+  [reasonCategory.id]: reasonCategory,
+  [ocamlCategory.id]: ocamlCategory,
+};
 
-export const categories =
-  files
-  .filter(name => name[1] === 'index.js')
-  .map(([catName]) => {
-    let category = localRequire(`./${catName}/index.js`);
+const parserByID = {
+  [refmt.id]: refmt,
+  [refmtMl.id]: refmtMl,
+};
 
-    categoryByID[category.id] = category;
-
-    category.codeExample = interopRequire(localRequire(`./${catName}/codeExample.txt`))
-
-    let catFiles =
-      files
-      .filter(([curCatName]) => curCatName === catName)
-      .map(name => name.slice(1));
-
-    category.parsers =
-      catFiles
-      .filter(([parserName]) => !restrictedParserNames.has(parserName))
-      .map(([parserName]) => {
-        let parser = interopRequire(localRequire(`./${catName}/${parserName}`));
-        parserByID[parser.id] = parser;
-        parser.category = category;
-        return parser;
-      });
-
-    category.transformers =
-      catFiles
-      .filter(([dirName, , fileName]) => dirName === 'transformers' && fileName === 'index.js')
-      .map(([, transformerName]) => {
-        const transformerDir = `./${catName}/transformers/${transformerName}`;
-        const transformer = interopRequire(localRequire(`${transformerDir}/index.js`));
-        transformerByID[transformer.id] = transformer;
-        transformer.defaultTransform = interopRequire(localRequire(`${transformerDir}/codeExample.txt`));
-        return transformer;
-      });
-
-    return category;
-  });
+export const categories = [reasonCategory, ocamlCategory];
 
 export function getDefaultCategory() {
-  return categoryByID.reason;
+  return reasonCategory;
 }
 
 export function getDefaultParser(category = getDefaultCategory()) {
@@ -72,8 +44,4 @@ export function getCategoryByID(id) {
 
 export function getParserByID(id) {
   return parserByID[id];
-}
-
-export function getTransformerByID(id) {
-  return transformerByID[id];
 }

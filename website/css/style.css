@@ -214,11 +214,6 @@ body {
   margin-left: auto;
 }
 
-#info.small {
-  font-size: 12px;
-  line-height: 1.3em;
-}
-
 .errorMessage {
   font-family: Verdana, non-serif;
   font-size: 1.2em;
@@ -311,10 +306,6 @@ body {
   overflow: auto;
   flex: 1;
   display: flex;
-}
-
-.output > .no-toolbar {
-  top: 0;
 }
 
 #JSONEditor .CodeMirror {
@@ -475,11 +466,6 @@ li.entry {
 }
 
 
-body .CodeMirror-hints,
-body .CodeMirror-Tern-tooltip {
-  z-index: 1000;
-}
-
 .shareInfo dd {
   margin: 0;
   margin-top: 5px;
@@ -492,25 +478,4 @@ body .CodeMirror-Tern-tooltip {
   width: calc(100% - 10px);
 }
 
-.toggleBtn {
-  position: absolute;
-  right: 0;
-  z-index: 10;
-  cursor: pointer;
-  outline: none;
-}
 
-.toggleBtn > .btnText {
-  padding-left: 5px;
-  font-size: 12px;
-}
-
-.settings-drawer__expanded {
-  width: 200px;
-  border-right: 1px solid #ddd;
-}
-
-.settings-drawer__collapsed {
-  width: 20px;
-  background-color: #ddd;
-}

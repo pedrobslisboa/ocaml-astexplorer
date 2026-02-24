@@ -1,39 +1,32 @@
-import PropTypes from 'prop-types';
 import React from 'react';
+import {useSelector, useDispatch} from 'react-redux';
+import {showShareDialog, getRevision} from '../../store/selectors';
+import {closeShareDialog} from '../../store/actions';
 
-export default class ShareDialog extends React.Component {
-  constructor(props) {
-    super(props);
-    this._outerClick = this._outerClick.bind(this);
-  }
+export default function ShareDialog() {
+  const dispatch = useDispatch();
+  const visible = useSelector(showShareDialog);
+  const snippet = useSelector(getRevision);
 
-  _outerClick(event) {
+  function outerClick(event) {
     if (event.target === document.getElementById('ShareDialog')) {
-      this.props.onWantToClose();
+      dispatch(closeShareDialog());
     }
   }
 
-  render() {
-    if (this.props.visible) {
-      return (
-        <div id="ShareDialog" className="dialog" onClick={this._outerClick}>
-          <div className="inner" style={{maxWidth: '80%', width: 600}}>
-            <div className="body">
-              {this.props.snippet.getShareInfo()}
-            </div>
-            <div className="footer">
-              <button onClick={this.props.onWantToClose}>Close</button>
-            </div>
+  if (visible) {
+    return (
+      <div id="ShareDialog" className="dialog" onClick={outerClick}>
+        <div className="inner" style={{maxWidth: '80%', width: 600}}>
+          <div className="body">
+            {snippet && snippet.getShareInfo()}
+          </div>
+          <div className="footer">
+            <button onClick={() => dispatch(closeShareDialog())}>Close</button>
           </div>
         </div>
-      );
-    }
-    return null;
+      </div>
+    );
   }
+  return null;
 }
-
-ShareDialog.propTypes = {
-  onWantToClose: PropTypes.func.isRequired,
-  visible: PropTypes.bool.isRequired,
-  snippet: PropTypes.object,
-};

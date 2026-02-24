@@ -5,65 +5,56 @@ import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/brace-fold';
 import PropTypes from 'prop-types';
 import {subscribe, clear} from '../utils/pubsub.js';
-import React from 'react';
+import React, {useRef, useEffect} from 'react';
 
-export default class Editor extends React.Component {
+export default function JSONEditor({value, className}) {
+  const containerRef = useRef(null);
+  const cmRef = useRef(null);
+  const prevValueRef = useRef(value);
 
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    if (nextProps.value !== this.codeMirror.getValue()) {
-      // preserve scroll position
-      let info = this.codeMirror.getScrollInfo();
-      this.codeMirror.setValue(nextProps.value);
-      this.codeMirror.scrollTo(info.left, info.top);
-    }
-  }
+  // Mount CodeMirror
+  useEffect(() => {
+    const subscriptions = [];
+    const cm = CodeMirror(containerRef.current, { // eslint-disable-line new-cap
+      value: value || '',
+      mode: {name: 'javascript', json: true},
+      readOnly: true,
+      lineNumbers: true,
+      foldGutter: true,
+      gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+    });
+    cmRef.current = cm;
 
-  shouldComponentUpdate() {
-    return false;
-  }
-
-  componentDidMount() {
-    this._subscriptions = [];
-    this.codeMirror = CodeMirror( // eslint-disable-line new-cap
-      this.container,
-      {
-        value: this.props.value,
-        mode: {name: 'javascript', json: true},
-        readOnly: true,
-        lineNumbers: true,
-        foldGutter: true,
-        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-      },
-    );
-
-    this._subscriptions.push(
+    subscriptions.push(
       subscribe('PANEL_RESIZE', () => {
-        if (this.codeMirror) {
-          this.codeMirror.refresh();
-        }
+        if (cmRef.current) cmRef.current.refresh();
       }),
     );
-  }
 
-  componentWillUnmount() {
-    this._unbindHandlers();
-    let container = this.container;
-    container.removeChild(container.children[0]);
-    this.codeMirror = null;
-  }
+    return () => {
+      clear(subscriptions);
+      const container = containerRef.current;
+      if (container && container.children[0]) {
+        container.removeChild(container.children[0]);
+      }
+      cmRef.current = null;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  _unbindHandlers() {
-    clear(this._subscriptions);
-  }
+  // Sync value changes
+  useEffect(() => {
+    const cm = cmRef.current;
+    if (!cm || value === prevValueRef.current) return;
+    prevValueRef.current = value;
+    const info = cm.getScrollInfo();
+    cm.setValue(value);
+    cm.scrollTo(info.left, info.top);
+  }, [value]);
 
-  render() {
-    return (
-      <div id="JSONEditor" className={this.props.className} ref={c => this.container = c}/>
-    );
-  }
+  return <div id="JSONEditor" className={className} ref={containerRef} />;
 }
 
-Editor.propTypes = {
+JSONEditor.propTypes = {
   value: PropTypes.string,
   className: PropTypes.string,
 };

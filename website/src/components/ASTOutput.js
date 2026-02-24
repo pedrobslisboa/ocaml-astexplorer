@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useState} from 'react';
+import {useSelector} from 'react-redux';
 import cx from '../utils/classnames.js';
 import visualizations from './visualization';
-
-const {useState} = React;
+import {getParseResult, getCursor} from '../store/selectors';
 
 function formatTime(time) {
   if (!time) {
@@ -15,7 +15,9 @@ function formatTime(time) {
   return `${(time / 1000).toFixed(2)}s`;
 }
 
-export default function ASTOutput({parseResult={}, position=null}) {
+export default function ASTOutput() {
+  const parseResult = useSelector(getParseResult) || {};
+  const position = useSelector(getCursor);
   const [selectedOutput, setSelectedOutput] = useState(0);
   const {ast=null} = parseResult;
   let output;
@@ -67,11 +69,6 @@ export default function ASTOutput({parseResult={}, position=null}) {
     </div>
   );
 }
-
-ASTOutput.propTypes = {
-  parseResult: PropTypes.object,
-  position: PropTypes.number,
-};
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
