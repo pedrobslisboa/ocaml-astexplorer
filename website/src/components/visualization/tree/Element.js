@@ -309,6 +309,10 @@ const Element = React.memo(function Element({
       className={classNames}
       onMouseOver={onMouseOver}
       onMouseLeave={onMouseLeave}>
+      {showToggler
+        ? <span className={`toggler ${isOpen ? 'open' : 'closed'}`} onClick={onToggleClick}>{isOpen ? '−' : '+'}</span>
+        : null
+      }
       {name ? <PropertyName name={name} computed={computed} onClick={onToggleClick} /> : null}
       <span className="value">
         {valueOutput}

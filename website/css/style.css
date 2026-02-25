@@ -427,16 +427,20 @@ li.entry {
   user-select: text;
 }
 
-.entry.toggable::before {
-  content: '+';
-  color: green;
+.entry .toggler {
   position: absolute;
-  left: -10px;
+  left: -14px;
+  cursor: pointer;
+  font-weight: bold;
+  user-select: none;
 }
 
-.entry.toggable.open::before {
-  content: '-';
+.entry .toggler.open {
   color: red;
+}
+
+.entry .toggler.closed {
+  color: green;
 }
 
 .entry .invokeable {

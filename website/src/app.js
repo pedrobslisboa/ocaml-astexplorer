@@ -34,6 +34,7 @@ function applyTheme(theme) {
   const prefersDark = darkMediaQuery.matches;
   const isDark = theme === 'dark' || (theme === 'auto' && prefersDark);
   document.documentElement.classList.toggle('dark', isDark);
+  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 }
 
 function App() {
