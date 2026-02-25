@@ -7,7 +7,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 const DEV = process.env.NODE_ENV !== 'production';
-const PUBLIC_PATH = process.env.PUBLIC_PATH || (DEV ? '/' : '/astexplorer/');
+const PUBLIC_PATH = process.env.PUBLIC_PATH || (DEV ? '/' : '/ocaml-astexplorer/');
 const CACHE_BREAKER = Number(fs.readFileSync(path.join(__dirname, 'CACHE_BREAKER')));
 
 const plugins = [

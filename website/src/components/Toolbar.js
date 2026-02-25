@@ -10,7 +10,6 @@ import {
   openSettingsDialog,
   openShareDialog,
   setParser,
-  reset,
   setKeyMap,
   setTheme,
 } from '../store/actions';
@@ -19,37 +18,19 @@ import * as selectors from '../store/selectors';
 export default function Toolbar() {
   const dispatch = useDispatch();
   const parser = useSelector(selectors.getParser);
-  const forking = useSelector(selectors.isForking);
-  const saving = useSelector(selectors.isSaving);
-  const canSaveVal = useSelector(selectors.canSave);
-  const canForkVal = useSelector(selectors.canFork);
   const keyMap = useSelector(selectors.getKeyMap);
-  const snippet = useSelector(selectors.getRevision);
   const theme = useSelector(selectors.getTheme);
 
   const props = {
-    forking,
-    saving,
-    canSave: canSaveVal,
-    canFork: canForkVal,
     category: parser.category,
     parser,
     keyMap,
-    snippet,
     onParserChange: p => dispatch(setParser(p)),
     onCategoryChange: category => dispatch(selectCategory(category)),
     onParserSettingsButtonClick: () => dispatch(openSettingsDialog()),
     onShareButtonClick: () => dispatch(openShareDialog()),
     onKeyMapChange: km => dispatch(setKeyMap(km)),
     onSave: () => dispatch(save(false)),
-    onFork: () => dispatch(save(true)),
-    onNew: () => {
-      if (global.location.hash) {
-        global.location.hash = '';
-      } else {
-        dispatch(reset());
-      }
-    },
   };
 
   return (
@@ -63,7 +44,7 @@ export default function Toolbar() {
         style={{minWidth: 0}}
         target="_blank" rel="noopener noreferrer"
         title="Help"
-        href="https://github.com/pedrolisboa/ocaml-ast-explorer/blob/master/README.md">
+        href="https://github.com/pedrobslisboa/ocaml-astexplorer">
         <i className="fa fa-lg fa-question fa-fw" />
       </a>
       <div id="info">

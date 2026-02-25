@@ -2,23 +2,22 @@ import * as LocalStorage from './components/LocalStorage';
 import ASTOutput from './components/ASTOutput';
 import Editor from './components/Editor';
 import ErrorMessage from './components/ErrorMessage';
-import GistBanner from './components/GistBanner';
 import LoadingIndicator from './components/LoadingIndicator';
 import PasteDropTarget from './components/PasteDropTarget';
-import {publish} from './utils/pubsub.js';
+import { publish } from './utils/pubsub.js';
 import * as React from 'react';
 import SettingsDialog from './components/dialogs/SettingsDialog';
 import ShareDialog from './components/dialogs/ShareDialog';
 import SplitPane from './components/SplitPane';
 import Toolbar from './components/Toolbar';
 import debounce from './utils/debounce';
-import {Provider, useSelector} from 'react-redux';
-import {astexplorer, persist, revive} from './store/reducers';
-import {createStore, applyMiddleware, compose} from 'redux';
-import {getRevision, getTheme} from './store/selectors';
-import {loadSnippet} from './store/actions';
-import {render} from 'react-dom';
-import * as gist from './storage/gist';
+import { Provider, useSelector } from 'react-redux';
+import { astexplorer, persist, revive } from './store/reducers';
+import { createStore, applyMiddleware, compose } from 'redux';
+import { getRevision, getTheme } from './store/selectors';
+import { loadSnippet } from './store/actions';
+import { render } from 'react-dom';
+import * as urlStorage from './storage/url';
 import StorageHandler from './storage';
 import '../css/style.css';
 import parserMiddleware from './store/parserMiddleware';
@@ -42,12 +41,11 @@ function App() {
   return (
     <>
       <ErrorMessage />
-      <PasteDropTarget id="main" className={cx({hasError})}>
+      <PasteDropTarget id="main" className={cx({ hasError })}>
         <LoadingIndicator />
         <SettingsDialog />
         <ShareDialog />
         <Toolbar />
-        <GistBanner />
         <SplitPane
           className="splitpane-content"
           vertical={true}
@@ -59,13 +57,16 @@ function App() {
             <ASTOutput />
           </SplitPane>
         </SplitPane>
+        <div id="contribution">
+          <a href="https://github.com/fkling/astexplorer">Based on astexplorer</a>
+        </div>
       </PasteDropTarget>
     </>
   );
 }
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-const storageAdapter = new StorageHandler([gist]);
+const storageAdapter = new StorageHandler([urlStorage]);
 const store = createStore(
   astexplorer,
   revive(LocalStorage.readState()),
@@ -86,7 +87,7 @@ store.subscribe(() => applyTheme(getTheme(store.getState())));
 // Also react to OS-level dark mode changes (for 'auto' mode)
 darkMediaQuery.addListener(() => applyTheme(getTheme(store.getState())));
 
-store.dispatch({type: 'INIT'});
+store.dispatch({ type: 'INIT' });
 // Apply initial theme before first render
 applyTheme(getTheme(store.getState()));
 
@@ -97,10 +98,12 @@ render(
   document.getElementById('container'),
 );
 
-global.onhashchange = () => {
+// Load snippet from URL on back/forward navigation
+global.addEventListener('popstate', () => {
   store.dispatch(loadSnippet());
-};
+});
 
-if (location.hash.length > 1) {
+// Load snippet if URL has query params on initial page load
+if (location.search.length > 1) {
   store.dispatch(loadSnippet());
 }

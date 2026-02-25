@@ -1,18 +1,23 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-export default function ShareButton({onShareButtonClick, snippet}) {
+export default function ShareButton({onSave, onShareButtonClick}) {
+  function handleClick() {
+    // Update the URL first, then open the share dialog
+    onSave();
+    onShareButtonClick();
+  }
+
   return (
     <button
       type="button"
-      disabled={!snippet}
-      onClick={onShareButtonClick}>
+      onClick={handleClick}>
       <i className="fa fa-share fa-fw" />&nbsp;Share...
     </button>
   );
 }
 
 ShareButton.propTypes = {
+  onSave: PropTypes.func.isRequired,
   onShareButtonClick: PropTypes.func.isRequired,
-  snippet: PropTypes.object,
 };

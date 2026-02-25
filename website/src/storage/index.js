@@ -3,25 +3,9 @@ export default class StorageHandler {
     this._backends = backends;
   }
 
-  _first() {
-    return this._backends[0];
-  }
-
-  _owns(revision) {
-    for (const backend of this._backends) {
-      if (backend.owns(revision)) {
-        return backend;
-      }
-    }
-    return null;
-  }
-
-  updateHash(revision) {
-    global.location.hash = revision.getPath();
-  }
-
   fetchFromURL() {
-    if (/^#?\/?$/.test(global.location.hash)) {
+    // No query params and no hash — nothing to load
+    if (!global.location.search && /^#?\/?$/.test(global.location.hash)) {
       return Promise.resolve(null);
     }
     for (const backend of this._backends) {
@@ -33,23 +17,14 @@ export default class StorageHandler {
   }
 
   /**
-   * Create a new snippet.
+   * Encode state into the URL (replaces the old gist hash approach).
    */
-  create(data) {
-    return this._first().create(data);
-  }
-
-  /**
-   * Update an existing snippet.
-   */
-  update(revision, data) {
-    return this._first().update(revision, data);
-  }
-
-  /**
-   * Fork existing snippet.
-   */
-  fork(revision, data) {
-    return this._first().fork(revision, data);
+  updateURL(data) {
+    for (const backend of this._backends) {
+      if (backend.updateURL) {
+        backend.updateURL(data);
+        return;
+      }
+    }
   }
 }
