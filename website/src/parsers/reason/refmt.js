@@ -46,10 +46,14 @@ export default {
   },
 
   parse(parser, code) {
-    return JSON.parse(parser.parseReason(code));
+    return JSON.parse(parser.parseRE(code));
   },
 
-  getTreeFilters({ignoreKeysFilter, emptyKeysFilter, locationInformationFilter}) {
+  format(parser, code) {
+    return parser.formatRE(code);
+  },
+
+  getTreeFilters({ ignoreKeysFilter, emptyKeysFilter, locationInformationFilter }) {
     return [
       ignoreKeysFilter(this._ignoredProperties),
       emptyKeysFilter(),

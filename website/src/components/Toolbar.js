@@ -12,6 +12,7 @@ import {
   setParser,
   setKeyMap,
   setTheme,
+  formatCode,
 } from '../store/actions';
 import * as selectors from '../store/selectors';
 
@@ -38,6 +39,12 @@ export default function Toolbar() {
       <h1>OCaml AST explorer</h1>
       <SnippetButton {...props} />
       <CategoryButton {...props} />
+      <div className="button">
+        <button type="button" onClick={() => dispatch(formatCode())}>
+          <i className="fa fa-lg fa-align-left fa-fw" />
+          &nbsp;Format
+        </button>
+      </div>
       <KeyMapButton {...props} />
       <ThemeButton theme={theme} onThemeChange={t => dispatch(setTheme(t))} />
       <a

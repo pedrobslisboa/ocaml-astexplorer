@@ -252,7 +252,7 @@ module.exports = Object.assign({
       /typescript\/lib/,
       /esprima\/dist\/esprima\.js/,
       /esprima-fb\/esprima\.js/,
-      /astexplorer-refmt\/dist\/ast_explorer_refmt\.bc\.js/,
+      /ast_explorer_refmt\.bc\.js/,
     ],
   },
 

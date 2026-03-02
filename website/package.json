@@ -1,6 +1,7 @@
 {
   "name": "ocaml-astexplorer",
   "version": "2.0.0",
+  "packageManager": "yarn@4.5.0",
   "description": "OCaml AST explorer for Reason and OCaml",
   "repository": {
     "type": "git",
@@ -40,7 +41,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.16.3",
-    "astexplorer-refmt": "^2.0.0",
+    "astexplorer-refmt": "portal:../refmt",
     "codemirror": "^5.65.16",
     "font-awesome": "^4.5.0",
     "isomorphic-fetch": "^2.2.1",
@@ -57,8 +58,8 @@
   "scripts": {
     "dev": "concurrently \"yarn start\" \"yarn build-dev\"",
     "start": "serve -l 8080 ../out",
-    "build": "rimraf ../out/* && cross-env NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=production webpack --mode=production",
-    "build-dev": "rimraf ../out/* && cross-env NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=development webpack -d --mode=development",
+    "build": "rimraf ../out && cross-env NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=production webpack --mode=production",
+    "build-dev": "rimraf ../out && cross-env NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=development webpack -d --mode=development",
     "watch": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack -dw --mode=development",
     "lint": "node_modules/eslint/bin/eslint.js src/",
     "fontcustom": "fontcustom compile ./fontcustom/input-svg/ --config=./fontcustom/config.yml"

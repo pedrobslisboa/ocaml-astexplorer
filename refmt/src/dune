@@ -1,0 +1,13 @@
+(executable
+ (name ast_explorer_refmt)
+ (libraries
+  reason
+  ppxlib
+  yojson
+  js_of_ocaml
+  ppxlib.astlib
+  ocamlformat-lib
+  ocamlformat-lib.ocamlformat_stdlib
+  base
+  compiler-libs.common)
+ (modes js))

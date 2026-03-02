@@ -1,0 +1,12 @@
+*.byte
+*.install
+*.native
+_build
+.DS_Store
+.esy
+.merlin
+_opam
+_release
+dist
+node_modules
+ast_explorer_refmt.bc.js

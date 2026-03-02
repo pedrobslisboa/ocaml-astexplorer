@@ -23,12 +23,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4.0"
+
+      - name: Install opam dependencies
+        run: opam install . --deps-only --yes
+        working-directory: refmt
+
+      - name: Build refmt
+        run: |
+          opam exec -- dune build
+          mkdir -p dist
+          cp _build/default/src/ast_explorer_refmt.bc.js dist/
+        working-directory: refmt
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: yarn
-          cache-dependency-path: website/yarn.lock
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Install dependencies
         run: yarn
@@ -38,7 +55,7 @@ jobs:
         run: yarn build
         working-directory: website
         env:
-          NODE_OPTIONS: --openssl-legacy-provider
+          NODE_OPTIONS: --openssl-legacy-provider --preserve-symlinks
           NODE_ENV: production
           PUBLIC_PATH: /ocaml-astexplorer/
 

@@ -1,0 +1,39 @@
+(lang dune 3.8)
+
+(using melange 0.1)
+
+(implicit_transitive_deps false)
+
+(name astexplorer-refmt)
+
+(source
+ (github jchavarri/astexplorer-refmt))
+
+(license ISC)
+
+(maintainers
+ "Javier Chávarri "
+ "Pedro Lisboa ")
+
+(authors "Javier Chávarri ")
+
+(package
+ (name astexplorer-refmt)
+ (synopsis "OCaml AST explorer for Reason and OCaml")
+ (allow_empty)
+ (depends
+  (ocaml
+   (>= 5.4.0))
+  (reason
+   (>= 3.17.2))
+  (js_of_ocaml-ppx
+   (>= 6.2.0))
+  ; Library dependencies
+  (js_of_ocaml
+   (>= 6.2.0))
+  yojson
+  ocamlformat
+  ocamlformat-lib
+  ppxlib
+  ; We use ocamlformat on the tests
+  (ocaml-lsp-server :with-dev-setup)))

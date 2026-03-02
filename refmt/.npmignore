@@ -1,0 +1,9 @@
+_opam
+_build
+node_modules
+src
+.ocamlformat
+Makefile
+dune
+dune-project
+*.opam
